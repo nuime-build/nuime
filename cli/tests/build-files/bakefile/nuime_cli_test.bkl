@@ -23,8 +23,14 @@ program nuime_cli_tests : IshikoTestFramework
         cxx-compiler-options = "/utf-8";
     }
 
+    headers
+    {
+        ../../src/ExportCommandTests.hpp
+    }
+
     sources
     {
+        ../../src/ExportCommandTests.cpp
         ../../src/main.cpp
     }
 }

@@ -1,6 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Xavier Leclercq
 // SPDX-License-Identifier: MIT
 
+#include "ExportCommandTests.hpp"
 #include <Ishiko/BasePlatform.hpp>
 #include <Ishiko/TestFramework.hpp>
 #include <exception>
@@ -28,6 +29,7 @@ int main(int argc, char* argv[])
         TestHarness the_test_harness("Nuime CLI Tests", configuration);
 
         TestSequence& the_tests = the_test_harness.tests();
+        the_tests.append<ExportCommandTests>();
 
         return the_test_harness.run();
     }

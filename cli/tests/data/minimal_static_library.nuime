@@ -1,0 +1,14 @@
+%YAML 1.2
+---
+nuime-version: "0.1"
+name: example
+targets:
+  - name: lib
+    labels:
+      - nuime:code:static-library
+    input-groups:
+      - inputs:
+          - src/main.cpp
+    output-groups:
+      - outputs:
+          - example

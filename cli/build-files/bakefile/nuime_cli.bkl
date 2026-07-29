@@ -1,3 +1,5 @@
+nuimepath = envvar("NUIME_ROOT");
+import $(nuimepath)/nuime/include/Nuime.bkl;
 ishikopath = envvar("ISHIKO_CPP_ROOT");
 import $(ishikopath)/color/include/Ishiko/Color.bkl;
 import $(ishikopath)/configuration/include/Ishiko/Configuration.bkl;
@@ -11,13 +13,14 @@ vs2022.solutionfile = ../vc17/nuime_cli.sln;
 vs2019.solutionfile = ../vc16/nuime_cli.sln;
 vs2017.solutionfile = ../vc15/nuime_cli.sln;
 
-program nuime : IshikoTerminal, IshikoColor, IshikoConfiguration, IshikoErrors
+program nuime : Nuime, IshikoTerminal, IshikoColor, IshikoConfiguration, IshikoErrors
 {
     if ($(toolset) == gnu)
     {
         cxx-compiler-options = "-std=c++14";
         outputdir = ../../../bin;
-        libs += IshikoTerminal IshikoColor IshikoConfiguration IshikoText IshikoErrors;
+        libs += nuime nuime_buildfiles IshikoTerminal IshikoColor IshikoConfiguration IshikoFileSystem IshikoIO IshikoUUIDs IshikoText IshikoErrors IshikoBasePlatform;
+        libs += yaml-cpp fmt boost_filesystem;
     }
 
     if ($(toolset) != gnu)

@@ -16,4 +16,6 @@ CommandLineSpecification::CommandLineSpecification()
     Ishiko::CommandLineSpecification::CommandDetails& export_command_details = addCommand("command", "export");
     export_command_details.addPositionalOption(2, "build-file",
         {Ishiko::CommandLineSpecification::OptionType::single_value});
+    export_command_details.addPositionalOption(3, "output-file",
+        {Ishiko::CommandLineSpecification::OptionType::single_value});
 }

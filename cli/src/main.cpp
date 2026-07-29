@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "CommandLineSpecification.hpp"
+#include <Nuime.hpp>
+#include <Nuime/BuildFiles/linkoptions.hpp>
 #include <Ishiko/Color.hpp>
 #include <Ishiko/Errors.hpp>
 #include <Ishiko/Terminal.hpp>
@@ -31,8 +33,14 @@ int main(int argc, char* argv[])
         else if (command_name == "export")
         {
             const std::string& build_file = command_configuration.value("build-file").asString();
+            const std::string& output_file = command_configuration.value("output-file").asString();
 
-            // TODO
+            Engine engine;
+            engine.load(build_file, error);
+            if (!error)
+            {
+                engine.exportToCMake(output_file, error);
+            }
         }
 
         if (error)
