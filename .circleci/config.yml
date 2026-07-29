@@ -2,44 +2,56 @@ version: 2.1
 jobs:
   bootstrap-build:
     docker:
-      - image: codesmithy/gcc-bootstrap-build-prerequisites:0.13.0
+      - image: codesmithy/gcc-bootstrap-build-prerequisites:0.14.0
     steps:
-      - run: 
-          name: "Set CODESMITHYIDE_ROOT environment variables"
-          command: echo 'export CODESMITHYIDE_ROOT="/workspace/projects/codesmithyide"' >> $BASH_ENV
+      - run:
+          name: "Set NUIME_ROOT environment variables"
+          command: echo 'export NUIME_ROOT="/workspace/projects/nuime-build"' >> $BASH_ENV
+      - run:
+          name: "Install build dependency: Nuime/BuildFiles"
+          command: mkdir -p /workspace/projects/nuime-build && cd /workspace/projects/nuime-build && git clone https://github.com/nuime-build/build-files.git && cd build-files/build-files/gnumake && make
       - checkout:
-          path: /workspace/projects/codesmithyide/nuime
+          path: /workspace/projects/nuime-build/nuime
       - run:
           name: Build
-          command: cd /workspace/projects/codesmithyide/nuime/library/build-files/gnumake && make
-      - run:
-          name: Build
-          command: cd /workspace/projects/codesmithyide/nuime/cli/build-files/gnumake && make
+          command: cd /workspace/projects/nuime-build/nuime/library/build-files/gnumake && make
       - run:
           name: "Test"
-          command: cd /workspace/projects/codesmithyide/nuime/cli/tests/build-files/gnumake && make && ./nuime_cli_tests
+          command: cd /workspace/projects/nuime-build/nuime/library/tests/build-files/gnumake && make && ./nuime_lib_tests
+      - run:
+          name: Build
+          command: cd /workspace/projects/nuime-build/nuime/cli/build-files/gnumake && make
+      - run:
+          name: "Test"
+          command: cd /workspace/projects/nuime-build/nuime/cli/tests/build-files/gnumake && make && ./nuime_cli_tests
       - store_artifacts:
-          path: /workspace/projects/codesmithyide/nuime/bin/nuime
+          path: /workspace/projects/nuime-build/nuime/bin/nuime
   build:
     docker:
-      - image: codesmithy/gcc-build-prerequisites:0.17.0
+      - image: codesmithy/gcc-build-prerequisites:0.18.0
     steps:
       - run:
-          name: "Set CODESMITHYIDE_ROOT environment variables"
-          command: echo 'export CODESMITHYIDE_ROOT="/workspace/projects//codesmithyide"' >> $BASH_ENV
+          name: "Set NUIME_ROOT environment variables"
+          command: echo 'export NUIME_ROOT="/workspace/projects/nuime-build"' >> $BASH_ENV
+      - run:
+          name: "Install build dependency: Nuime/BuildFiles"
+          command: mkdir -p /workspace/projects/nuime-build && cd /workspace/projects/nuime-build && git clone https://github.com/nuime-build/build-files.git && cd build-files/build-files/gnumake && make
       - checkout:
-          path: /workspace/projects/codesmithyide/nuime
+          path: /workspace/projects/nuime-build/nuime
       - run:
           name: Build
-          command: cd /workspace/projects/codesmithyide/nuime/library/build-files/gnumake && make
-      - run:
-          name: Build
-          command: cd /workspace/projects/codesmithyide/nuime/cli/build-files/gnumake && make
+          command: cd /workspace/projects/nuime-build/nuime/library/build-files/gnumake && make
       - run:
           name: "Test"
-          command: cd /workspace/projects/codesmithyide/nuime/cli/tests/build-files/gnumake && make && ./nuime_cli_tests
+          command: cd /workspace/projects/nuime-build/nuime/library/tests/build-files/gnumake && make && ./nuime_lib_tests
+      - run:
+          name: Build
+          command: cd /workspace/projects/nuime-build/nuime/cli/build-files/gnumake && make
+      - run:
+          name: "Test"
+          command: cd /workspace/projects/nuime-build/nuime/cli/tests/build-files/gnumake && make && ./nuime_cli_tests
       - store_artifacts:
-          path: /workspace/projects/codesmithyide/nuime/bin/nuime
+          path: /workspace/projects/nuime-build/nuime/bin/nuime
 workflows:
   version: 2
   continuous_build:
