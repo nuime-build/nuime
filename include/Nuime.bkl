@@ -1,0 +1,23 @@
+nuimepath = envvar("NUIME_ROOT");
+import $(nuimepath)/build-files/include/Nuime/NuimeBuildFiles.bkl;
+
+setting NUIME_LIB_ROOT
+{
+    help = "Path to the Nuime library installation";
+    default = '$(NUIME_ROOT)/nuime';
+}
+
+template Nuime : NuimeBuildFiles
+{
+    includedirs += $(NUIME_LIB_ROOT)/include;
+
+    if ($(toolset) == gnu)
+    {
+        libdirs += $(NUIME_LIB_ROOT)/lib;
+    }
+
+    if ($(toolset) != gnu)
+    {
+        libdirs += $(NUIME_LIB_ROOT)/lib/$(arch);
+    }
+}

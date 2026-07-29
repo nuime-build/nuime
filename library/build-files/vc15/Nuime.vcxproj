@@ -159,6 +159,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\include\Nuime.hpp" />
     <ClInclude Include="..\..\..\include\Nuime\Engine.hpp" />
+    <ClInclude Include="..\..\..\include\Nuime\linkoptions.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

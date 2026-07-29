@@ -34,6 +34,7 @@ library nuime : NuimeBuildFiles
     {
         ../../../include/Nuime.hpp
         ../../../include/Nuime/Engine.hpp
+        ../../../include/Nuime/linkoptions.hpp
     }
 
     sources
