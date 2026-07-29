@@ -33,12 +33,13 @@ int main(int argc, char* argv[])
         else if (command_name == "export")
         {
             const std::string& build_file = command_configuration.value("build-file").asString();
+            const std::string& output_file = command_configuration.value("output-file").asString();
 
             Engine engine;
             engine.load(build_file, error);
             if (!error)
             {
-                engine.exportToCMake("CMakeLists.txt", error);
+                engine.exportToCMake(output_file, error);
             }
         }
 
