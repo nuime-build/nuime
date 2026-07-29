@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "CommandLineSpecification.hpp"
+#include <Nuime.hpp>
+#include <Nuime/BuildFiles/linkoptions.hpp>
 #include <Ishiko/Color.hpp>
 #include <Ishiko/Errors.hpp>
 #include <Ishiko/Terminal.hpp>
@@ -32,7 +34,12 @@ int main(int argc, char* argv[])
         {
             const std::string& build_file = command_configuration.value("build-file").asString();
 
-            // TODO
+            Engine engine;
+            engine.load(build_file, error);
+            if (!error)
+            {
+                engine.exportToCMake("CMakeLists.txt", error);
+            }
         }
 
         if (error)
