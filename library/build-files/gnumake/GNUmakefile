@@ -33,6 +33,22 @@ override CXXFLAGS += -O2
 else ifneq (,$(config))
 $(warning Unknown configuration "$(config)")
 endif
+#
+# Additionally, this makefile is customizable with the following
+# settings:
+#
+#      ISHIKO_CPP_BASEPLATFORM_ROOT  Path to the Ishiko/C++ BasePlatform installation
+#      ISHIKO_CPP_ERRORS_ROOT        Path to the Ishiko/C++ Errors installation
+#      ISHIKO_CPP_IO_ROOT            Path to the Ishiko/C++ IO installation
+#      ISHIKO_CPP_BOOST_ROOT         Path to the Boost installation
+#      ISHIKO_CPP_FILESYSTEM_ROOT    Path to the Ishiko/C++ FileSystem installation
+#      ISHIKO_CPP_FMT_ROOT           Path to the fmt installation
+#      ISHIKO_CPP_MEMORY_ROOT        Path to the Ishiko/C++ Memory installation
+#      ISHIKO_CPP_TEXT_ROOT          Path to the Ishiko/C++ Text installation
+#      ISHIKO_CPP_YAML_CPP_ROOT      Path to the yaml-cpp installation
+#      ISHIKO_CPP_TIDYYAML_ROOT      Path to the Ishiko/C++ TidyYAML installation
+#      ISHIKO_CPP_UUIDS_ROOT         Path to the Ishiko/C++ UUIDs installation
+#      NUIME_BUILDFILES_ROOT         Path to the Nuime/BuildFiles installation
 
 # Use "make RANLIB=''" for platforms without ranlib.
 RANLIB ?= ranlib
@@ -54,6 +70,38 @@ _builddir := $(if $(findstring $(abspath $(builddir)),$(builddir)),,../../)$(bui
 _builddir_error := $(shell mkdir -p $(_builddir) 2>&1)
 $(if $(_builddir_error),$(error Failed to create build directory: $(_builddir_error)))
 endif
+
+# ------------
+# Configurable settings:
+# 
+
+# Path to the Ishiko/C++ BasePlatform installation
+ISHIKO_CPP_BASEPLATFORM_ROOT ?= $(ISHIKO_CPP_ROOT)/base-platform
+# Path to the Ishiko/C++ Errors installation
+ISHIKO_CPP_ERRORS_ROOT ?= $(ISHIKO_CPP_ROOT)/errors
+# Path to the Ishiko/C++ IO installation
+ISHIKO_CPP_IO_ROOT ?= $(ISHIKO_CPP_ROOT)/io
+# Path to the Boost installation
+ISHIKO_CPP_BOOST_ROOT ?= $(BOOST_ROOT)
+# Path to the Ishiko/C++ FileSystem installation
+ISHIKO_CPP_FILESYSTEM_ROOT ?= $(ISHIKO_CPP_ROOT)/filesystem
+# Path to the fmt installation
+ISHIKO_CPP_FMT_ROOT ?= $(FMT_ROOT)
+# Path to the Ishiko/C++ Memory installation
+ISHIKO_CPP_MEMORY_ROOT ?= $(ISHIKO_CPP_ROOT)/memory
+# Path to the Ishiko/C++ Text installation
+ISHIKO_CPP_TEXT_ROOT ?= $(ISHIKO_CPP_ROOT)/text
+# Path to the yaml-cpp installation
+ISHIKO_CPP_YAML_CPP_ROOT ?= $(YAML_CPP_ROOT)
+# Path to the Ishiko/C++ TidyYAML installation
+ISHIKO_CPP_TIDYYAML_ROOT ?= $(ISHIKO_CPP_ROOT)/tidy-yaml
+# Path to the Ishiko/C++ UUIDs installation
+ISHIKO_CPP_UUIDS_ROOT ?= $(ISHIKO_CPP_ROOT)/uuids
+# Path to the Nuime/BuildFiles installation
+NUIME_BUILDFILES_ROOT ?= $(NUIME_ROOT)/build-files
+
+# ------------
+
 all: ../bakefile/../../../lib/lib$(if $(call _equal,$(config),Debug),nuime-d,nuime).a
 
 ../bakefile/../../../lib/lib$(if $(call _equal,$(config),Debug),nuime-d,nuime).a: $(_builddir)nuime_Engine.o
@@ -61,7 +109,7 @@ all: ../bakefile/../../../lib/lib$(if $(call _equal,$(config),Debug),nuime-d,nui
 	$(RANLIB) $@
 
 $(_builddir)nuime_Engine.o: ../../src/Engine.cpp
-	$(CXX) -c -o $@ $(CPPFLAGS) $(CXXFLAGS) -MD -MP -fPIC -DPIC -pthread -I../../../include/Nuime -std=c++14 ../../src/Engine.cpp
+	$(CXX) -c -o $@ $(CPPFLAGS) $(CXXFLAGS) -MD -MP -fPIC -DPIC -pthread -DYAML_CPP_STATIC_DEFINE -I$(ISHIKO_CPP_BASEPLATFORM_ROOT)/include -I$(ISHIKO_CPP_ERRORS_ROOT)/include -I$(ISHIKO_CPP_UUIDS_ROOT)/include -I$(ISHIKO_CPP_YAML_CPP_ROOT)/include -I$(ISHIKO_CPP_TIDYYAML_ROOT)/include -I$(ISHIKO_CPP_IO_ROOT)/include -I$(ISHIKO_CPP_BOOST_ROOT)/include -I$(ISHIKO_CPP_FILESYSTEM_ROOT)/include -I$(ISHIKO_CPP_FMT_ROOT)/include -I$(ISHIKO_CPP_MEMORY_ROOT)/include -I$(ISHIKO_CPP_TEXT_ROOT)/include -I$(NUIME_BUILDFILES_ROOT)/include -I../../../include/Nuime -std=c++14 ../../src/Engine.cpp
 
 clean:
 	rm -f $(_builddir)*.o
