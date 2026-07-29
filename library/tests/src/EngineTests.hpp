@@ -1,0 +1,18 @@
+// SPDX-FileCopyrightText: 2026 Xavier Leclercq
+// SPDX-License-Identifier: MIT
+
+#ifndef GUARD_NUIME_TESTS_ENGINETESTS_HPP
+#define GUARD_NUIME_TESTS_ENGINETESTS_HPP
+
+#include <Ishiko/TestFramework.hpp>
+
+class EngineTests : public Ishiko::TestSequence
+{
+public:
+    EngineTests(const Ishiko::TestNumber& number, const Ishiko::TestContext& context);
+
+private:
+    static void LoadTest1(Ishiko::Test& test);
+};
+
+#endif

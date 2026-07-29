@@ -1,6 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Xavier Leclercq
 // SPDX-License-Identifier: MIT
 
+#include "EngineTests.hpp"
+#include <Nuime/BuildFiles/linkoptions.hpp>
+#include <Nuime/linkoptions.hpp>
 #include <Ishiko/TestFramework.hpp>
 #include <exception>
 
@@ -20,6 +23,7 @@ int main(int argc, char* argv[])
         TestHarness the_test_harness("Nuime Library Tests", configuration);
 
         TestSequence& the_tests = the_test_harness.tests();
+        the_tests.append<EngineTests>();
 
         return the_test_harness.run();
     }
