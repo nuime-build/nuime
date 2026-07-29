@@ -7,23 +7,6 @@
 
 using namespace Nuime;
 
-namespace
-{
-
-bool IsStaticLibrary(const NuimeTarget& target)
-{
-    for (const NuimeLabel& label : target.labels())
-    {
-        if (label.asString() == WellKnownLabels::k_static_library)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-}
-
 void Engine::load(const boost::filesystem::path& path, Ishiko::Error& error)
 {
     m_build_file.load(path, error);
@@ -42,14 +25,19 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
 
     for (const NuimeRecipe& recipe : m_build_file.recipes())
     {
-        // For now we only handle static libraries and silently ignore everything else.
-        if (!IsStaticLibrary(recipe.target()))
+        const NuimeTarget& target = recipe.target();
+
+        // Check for the executable label first, then static library. For now we only handle these two
+        // and silently ignore everything else.
+        bool is_executable = target.hasLabel(WellKnownLabels::k_executable);
+        bool is_static_library = target.hasLabel(WellKnownLabels::k_static_library);
+        if (!is_executable && !is_static_library)
         {
             continue;
         }
 
-        // The library name is the recipe's output and its inputs are the sources.
-        std::string library_name = recipe.outputs().empty() ? recipe.target().name() : recipe.outputs()[0].asString();
+        // The artifact name is the recipe's output and its inputs are the sources.
+        std::string name = recipe.outputs().empty() ? target.name() : recipe.outputs()[0].asString();
 
         std::vector<std::string> source_files;
         for (const NuimeInput& input : recipe.inputs())
@@ -57,7 +45,14 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             source_files.push_back(input.asString());
         }
 
-        writer.writeAddLibraryCommand(library_name, source_files);
+        if (is_executable)
+        {
+            writer.writeAddExecutableCommand(name, source_files);
+        }
+        else
+        {
+            writer.writeAddLibraryCommand(name, source_files);
+        }
     }
 
     writer.close();
