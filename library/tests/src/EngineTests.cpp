@@ -10,6 +10,7 @@ EngineTests::EngineTests(const Ishiko::TestNumber& number, const Ishiko::TestCon
     : TestSequence(number, "Engine tests", context)
 {
     append<Ishiko::HeapAllocationErrorsTest>("load test 1", LoadTest1);
+    append<Ishiko::HeapAllocationErrorsTest>("exportToCMake test 1", ExportToCMakeTest1);
 }
 
 void EngineTests::LoadTest1(Ishiko::Test& test)
@@ -22,5 +23,24 @@ void EngineTests::LoadTest1(Ishiko::Test& test)
     engine.load(input_path, error);
 
     ISHIKO_TEST_FAIL_IF(error);
+    ISHIKO_TEST_PASS();
+}
+
+void EngineTests::ExportToCMakeTest1(Ishiko::Test& test)
+{
+    const char* output_name = "EngineTests_ExportToCMakeTest1.txt";
+    boost::filesystem::path input_path = test.context().getDataPath("minimal.nuime");
+    boost::filesystem::path output_path = test.context().getOutputPath(output_name);
+
+    Engine engine;
+
+    Ishiko::Error error;
+    engine.load(input_path, error);
+    ISHIKO_TEST_ABORT_IF(error);
+
+    engine.exportToCMake(output_path, error);
+
+    ISHIKO_TEST_FAIL_IF(error);
+    ISHIKO_TEST_FAIL_IF_OUTPUT_AND_REFERENCE_FILES_NEQ(output_name);
     ISHIKO_TEST_PASS();
 }
