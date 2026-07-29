@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   bootstrap-build:
     docker:
-      - image: codesmithy/gcc-bootstrap-build-prerequisites:0.13.0
+      - image: codesmithy/gcc-bootstrap-build-prerequisites:0.14.0
     steps:
       - run: 
           name: "Set CODESMITHYIDE_ROOT environment variables"
@@ -28,7 +28,7 @@ jobs:
           path: /workspace/projects/codesmithyide/nuime/bin/nuime
   build:
     docker:
-      - image: codesmithy/gcc-build-prerequisites:0.17.0
+      - image: codesmithy/gcc-build-prerequisites:0.18.0
     steps:
       - run:
           name: "Set CODESMITHYIDE_ROOT environment variables"
