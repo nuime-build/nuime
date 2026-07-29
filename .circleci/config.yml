@@ -7,6 +7,9 @@ jobs:
       - run: 
           name: "Set CODESMITHYIDE_ROOT environment variables"
           command: echo 'export CODESMITHYIDE_ROOT="/workspace/projects/codesmithyide"' >> $BASH_ENV
+      - run:
+          name: "Install build dependency: Nuime/BuildFiles"
+          command: mkdir -p /workspace/projects/nuime && cd /workspace/projects/nuime && git clone https://github.com/nuime-build/build-files.git && cd build-files/build-files/gnumake && make
       - checkout:
           path: /workspace/projects/codesmithyide/nuime
       - run:
@@ -30,6 +33,9 @@ jobs:
       - run:
           name: "Set CODESMITHYIDE_ROOT environment variables"
           command: echo 'export CODESMITHYIDE_ROOT="/workspace/projects//codesmithyide"' >> $BASH_ENV
+      - run:
+          name: "Install build dependency: Nuime/BuildFiles"
+          command: mkdir -p /workspace/projects/nuime && cd /workspace/projects/nuime && git clone https://github.com/nuime-build/build-files.git && cd build-files/build-files/gnumake && make
       - checkout:
           path: /workspace/projects/codesmithyide/nuime
       - run:
