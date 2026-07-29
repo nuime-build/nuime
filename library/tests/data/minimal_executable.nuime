@@ -1,0 +1,14 @@
+%YAML 1.2
+---
+nuime-version: "0.1"
+name: example
+targets:
+  - name: exe
+    labels:
+      - nuime:code:executable
+    input-groups:
+      - inputs:
+          - src/main.cpp
+    output-groups:
+      - outputs:
+          - example
