@@ -3,8 +3,26 @@
 
 #include "Engine.hpp"
 #include <Nuime/BuildFiles/CMake/CMakeListsWriter.hpp>
+#include <Nuime/BuildFiles/Nuime/NuimeWellKnownLabels.hpp>
 
 using namespace Nuime;
+
+namespace
+{
+
+bool IsStaticLibrary(const NuimeTarget& target)
+{
+    for (const NuimeLabel& label : target.labels())
+    {
+        if (label.asString() == WellKnownLabels::k_static_library)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+}
 
 void Engine::load(const boost::filesystem::path& path, Ishiko::Error& error)
 {
@@ -24,8 +42,13 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
 
     for (const NuimeRecipe& recipe : m_build_file.recipes())
     {
-        // For now we only handle the static-library case of our simple example: the library name is
-        // the recipe's output and its inputs are the sources.
+        // For now we only handle static libraries and silently ignore everything else.
+        if (!IsStaticLibrary(recipe.target()))
+        {
+            continue;
+        }
+
+        // The library name is the recipe's output and its inputs are the sources.
         std::string library_name = recipe.outputs().empty() ? recipe.target().name() : recipe.outputs()[0].asString();
 
         std::vector<std::string> source_files;

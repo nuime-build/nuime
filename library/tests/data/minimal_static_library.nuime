@@ -4,6 +4,8 @@ nuime-version: "0.1"
 name: example
 targets:
   - name: lib
+    labels:
+      - nuime:code:static-library
     input-groups:
       - inputs:
           - src/main.cpp

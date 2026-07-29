@@ -14,6 +14,7 @@ public:
 private:
     static void LoadTest1(Ishiko::Test& test);
     static void ExportToCMakeTest1(Ishiko::Test& test);
+    static void ExportToCMakeTest2(Ishiko::Test& test);
 };
 
 #endif
