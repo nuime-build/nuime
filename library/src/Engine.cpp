@@ -4,6 +4,7 @@
 #include "Engine.hpp"
 #include <Nuime/BuildFiles/CMake/CMakeListsWriter.hpp>
 #include <Nuime/BuildFiles/Nuime/NuimeWellKnownLabels.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace Nuime;
 
@@ -23,6 +24,13 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
     writer.writeCMakeMinimumRequiredCommand("3.16");
     writer.writeProjectCommand(m_build_file.name());
 
+    // A group's base and inputs give a path relative to the build file's directory (unless the base
+    // is absolute). CMake needs each source relative to the generated CMakeLists.txt instead.
+    boost::filesystem::path build_file_dir =
+        boost::filesystem::absolute(m_build_file.path()).parent_path().lexically_normal();
+    boost::filesystem::path output_dir =
+        boost::filesystem::absolute(output_path).parent_path().lexically_normal();
+
     for (const NuimeRecipe& recipe : m_build_file.recipes())
     {
         const NuimeTarget& target = recipe.target();
@@ -36,13 +44,21 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             continue;
         }
 
-        // The sources are the inputs across every input group.
+        // The sources are the inputs across every input group, each resolved against its group's base
+        // and then re-expressed relative to the CMakeLists.txt directory.
         std::vector<std::string> source_files;
         for (const NuimeInputGroup& input_group : recipe.inputGroups())
         {
+            boost::filesystem::path base(input_group.base());
             for (const NuimeInput& input : input_group.inputs())
             {
-                source_files.push_back(input.asString());
+                boost::filesystem::path source = base / input.asString();
+                if (source.is_relative())
+                {
+                    source = build_file_dir / source;
+                }
+                source = source.lexically_normal();
+                source_files.push_back(source.lexically_relative(output_dir).generic_string());
             }
         }
 
