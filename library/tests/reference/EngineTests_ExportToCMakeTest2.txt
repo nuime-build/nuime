@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(example LANGUAGES CXX)
+set(SOURCE_FILES
+    src/main.cpp)
 add_library(example STATIC
-    src/main.cpp
+    ${SOURCE_FILES}
 )
