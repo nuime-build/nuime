@@ -44,12 +44,30 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             continue;
         }
 
-        // The sources are the inputs across every input group, each resolved against its group's base
-        // and then re-expressed relative to the CMakeLists.txt directory.
-        std::vector<std::string> source_files;
+        // Each input group becomes its own CMake variable, named after the group's label. The
+        // add_library/add_executable command then references those variables.
+        std::vector<std::string> variable_references;
         for (const NuimeInputGroup& input_group : recipe.inputGroups())
         {
+            std::string variable_name;
+            if (input_group.hasLabel(WellKnownLabels::k_cpp_source))
+            {
+                variable_name = "SOURCE_FILES";
+            }
+            else if (input_group.hasLabel(WellKnownLabels::k_cpp_header))
+            {
+                variable_name = "HEADER_FILES";
+            }
+            else
+            {
+                // Only recognised input kinds map to a variable for now.
+                continue;
+            }
+
+            // Each file is resolved against its group's base (relative to the build file's directory)
+            // and then re-expressed relative to the generated CMakeLists.txt directory.
             boost::filesystem::path base(input_group.base());
+            std::vector<std::string> files;
             for (const NuimeInput& input : input_group.inputs())
             {
                 boost::filesystem::path source = base / input.asString();
@@ -58,8 +76,11 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
                     source = build_file_dir / source;
                 }
                 source = source.lexically_normal();
-                source_files.push_back(source.lexically_relative(output_dir).generic_string());
+                files.push_back(source.lexically_relative(output_dir).generic_string());
             }
+
+            writer.writeSetCommand(variable_name, files);
+            variable_references.push_back("${" + variable_name + "}");
         }
 
         // The artifact name is the recipe's first output, falling back to the target name.
@@ -75,11 +96,11 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
 
         if (is_executable)
         {
-            writer.writeAddExecutableCommand(name, source_files);
+            writer.writeAddExecutableCommand(name, variable_references);
         }
         else
         {
-            writer.writeAddLibraryCommand(name, source_files);
+            writer.writeAddLibraryCommand(name, variable_references);
         }
     }
 

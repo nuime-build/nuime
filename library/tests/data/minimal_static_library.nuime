@@ -7,8 +7,14 @@ targets:
     labels:
       - nuime:code:static-library
     input-groups:
-      - inputs:
-          - src/main.cpp
+      - labels:
+          - nuime:code:cpp-header
+        inputs:
+          - include/my_library.hpp
+      - labels:
+          - nuime:code:cpp-source
+        inputs:
+          - src/my_library.cpp
     output-groups:
       - outputs:
           - example

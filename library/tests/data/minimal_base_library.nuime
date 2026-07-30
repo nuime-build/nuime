@@ -7,7 +7,9 @@ targets:
     labels:
       - nuime:code:static-library
     input-groups:
-      - base: sources
+      - labels:
+          - nuime:code:cpp-source
+        base: sources
         inputs:
           - main.cpp
     output-groups:

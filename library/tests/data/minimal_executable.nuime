@@ -7,7 +7,9 @@ targets:
     labels:
       - nuime:code:executable
     input-groups:
-      - inputs:
+      - labels:
+          - nuime:code:cpp-source
+        inputs:
           - src/main.cpp
     output-groups:
       - outputs:
