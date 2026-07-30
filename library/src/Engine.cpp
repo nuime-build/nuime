@@ -36,13 +36,25 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             continue;
         }
 
-        // The artifact name is the recipe's output and its inputs are the sources.
-        std::string name = recipe.outputs().empty() ? target.name() : recipe.outputs()[0].asString();
-
+        // The sources are the inputs across every input group.
         std::vector<std::string> source_files;
-        for (const NuimeInput& input : recipe.inputs())
+        for (const NuimeInputGroup& input_group : recipe.inputGroups())
         {
-            source_files.push_back(input.asString());
+            for (const NuimeInput& input : input_group.inputs())
+            {
+                source_files.push_back(input.asString());
+            }
+        }
+
+        // The artifact name is the recipe's first output, falling back to the target name.
+        std::string name = target.name();
+        for (const NuimeOutputGroup& output_group : recipe.outputGroups())
+        {
+            if (!output_group.outputs().empty())
+            {
+                name = output_group.outputs()[0].asString();
+                break;
+            }
         }
 
         if (is_executable)
