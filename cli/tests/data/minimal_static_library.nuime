@@ -8,9 +8,13 @@ targets:
       - nuime:code:static-library
     input-groups:
       - labels:
+          - nuime:code:cpp-header
+        inputs:
+          - include/my_library.hpp
+      - labels:
           - nuime:code:cpp-source
         inputs:
-          - src/main.cpp
+          - src/my_library.cpp
     output-groups:
       - outputs:
           - example
