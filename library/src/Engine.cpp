@@ -4,6 +4,7 @@
 #include "Engine.hpp"
 #include <Nuime/BuildFiles/CMake/CMakeListsWriter.hpp>
 #include <Nuime/BuildFiles/Nuime/NuimeWellKnownLabels.hpp>
+#include <Nuime/BuildFiles/Nuime/NuimeWellKnownProperties.hpp>
 #include <boost/filesystem.hpp>
 
 using namespace Nuime;
@@ -47,6 +48,11 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
         // Each input group becomes its own CMake variable, named after the group's label. The
         // add_library/add_executable command then references those variables.
         std::vector<std::string> variable_references;
+
+        // User include directories declared on the source groups become PRIVATE include directories on
+        // the target: they are needed to compile this target's own sources, not by its consumers.
+        std::vector<std::string> private_include_directories;
+
         for (const NuimeInputGroup& input_group : recipe.inputGroups())
         {
             std::string variable_name;
@@ -81,6 +87,22 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
 
             writer.writeSetCommand(variable_name, files);
             variable_references.push_back("${" + variable_name + "}");
+
+            // Include directories are paths relative to the build file's directory (like the inputs);
+            // re-express them relative to the generated CMakeLists.txt directory.
+            for (const NuimeProperty& property : input_group.properties().properties())
+            {
+                if (property.name() == WellKnownProperties::k_cpp_user_include_directories)
+                {
+                    boost::filesystem::path directory(property.value());
+                    if (directory.is_relative())
+                    {
+                        directory = build_file_dir / directory;
+                    }
+                    directory = directory.lexically_normal();
+                    private_include_directories.push_back(directory.lexically_relative(output_dir).generic_string());
+                }
+            }
         }
 
         // The artifact name is the recipe's first output, falling back to the target name.
@@ -101,6 +123,11 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
         else
         {
             writer.writeAddLibraryCommand(name, variable_references);
+        }
+
+        if (!private_include_directories.empty())
+        {
+            writer.writeTargetIncludeDirectoriesCommand(name, "PRIVATE", private_include_directories);
         }
     }
 
