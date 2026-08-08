@@ -18,8 +18,7 @@ void ExportCommandTests::ExportTest1(TestSequence& test_sequence)
     const char* output_name = "ExportCommandTests_ExportTest1.txt";
     boost::filesystem::path application_path = test_sequence.context().getApplicationPath();
     boost::filesystem::path build_file_path = test_sequence.context().getOutputPath("minimal_static_library.nuime");
-    boost::filesystem::copy_file(test_sequence.context().getDataPath("minimal_static_library.nuime"), build_file_path,
-        boost::filesystem::copy_options::overwrite_existing);
+    test_sequence.utils().copy("${context.data}/minimal_static_library.nuime", build_file_path.string());
     boost::filesystem::path output_path = test_sequence.context().getOutputPath(output_name);
 
     std::string command_line = (application_path.string() + " export " + build_file_path.string() + " " +
