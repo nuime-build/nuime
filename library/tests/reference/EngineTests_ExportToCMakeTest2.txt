@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.16)
 project(example LANGUAGES CXX)
+
 set(HEADER_FILES
     include/my_library.hpp)
+
 set(SOURCE_FILES
     src/my_library.cpp)
+
 add_library(example STATIC
     ${HEADER_FILES}
     ${SOURCE_FILES}

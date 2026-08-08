@@ -85,6 +85,7 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
                 files.push_back(source.lexically_relative(output_dir).generic_string());
             }
 
+            writer.writeBlankLine();
             writer.writeSetCommand(variable_name, files);
             variable_references.push_back("${" + variable_name + "}");
 
@@ -116,6 +117,7 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             }
         }
 
+        writer.writeBlankLine();
         if (is_executable)
         {
             writer.writeAddExecutableCommand(name, variable_references);
@@ -127,6 +129,7 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
 
         if (!private_include_directories.empty())
         {
+            writer.writeBlankLine();
             writer.writeTargetIncludeDirectoriesCommand(name, "PRIVATE", private_include_directories);
         }
     }
