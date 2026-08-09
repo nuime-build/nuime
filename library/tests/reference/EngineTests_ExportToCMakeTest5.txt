@@ -13,3 +13,7 @@ add_library(example STATIC
     ${HEADER_FILES}
     ${SOURCE_FILES}
 )
+
+target_include_directories(example PRIVATE
+    include
+)

@@ -17,6 +17,8 @@ private:
     static void ExportToCMakeTest2(Ishiko::Test& test);
     static void ExportToCMakeTest3(Ishiko::Test& test);
     static void ExportToCMakeTest4(Ishiko::Test& test);
+    static void ExportToCMakeTest5(Ishiko::Test& test);
+    static void ExportToCMakeTest6(Ishiko::Test& test);
 };
 
 #endif

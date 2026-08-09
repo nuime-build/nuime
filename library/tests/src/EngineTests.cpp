@@ -15,6 +15,8 @@ EngineTests::EngineTests(const Ishiko::TestNumber& number, const Ishiko::TestCon
     append<Ishiko::HeapAllocationErrorsTest>("exportToCMake test 2", ExportToCMakeTest2);
     append<Ishiko::HeapAllocationErrorsTest>("exportToCMake test 3", ExportToCMakeTest3);
     append<Ishiko::HeapAllocationErrorsTest>("exportToCMake test 4", ExportToCMakeTest4);
+    append<Ishiko::HeapAllocationErrorsTest>("exportToCMake test 5", ExportToCMakeTest5);
+    append<Ishiko::HeapAllocationErrorsTest>("exportToCMake test 6", ExportToCMakeTest6);
 }
 
 void EngineTests::LoadTest1(Ishiko::Test& test)
@@ -97,6 +99,50 @@ void EngineTests::ExportToCMakeTest4(Ishiko::Test& test)
     boost::filesystem::path input_path = test.context().getOutputPath("minimal_base_library.nuime");
     boost::filesystem::copy_file(test.context().getDataPath("minimal_base_library.nuime"), input_path,
         boost::filesystem::copy_options::overwrite_existing);
+    boost::filesystem::path output_path = test.context().getOutputPath(output_name);
+
+    Engine engine;
+
+    Ishiko::Error error;
+    engine.load(input_path, error);
+    ISHIKO_TEST_ABORT_IF(error);
+
+    engine.exportToCMake(output_path, error);
+
+    ISHIKO_TEST_FAIL_IF(error);
+    ISHIKO_TEST_FAIL_IF_OUTPUT_AND_REFERENCE_FILES_NEQ(output_name);
+    ISHIKO_TEST_PASS();
+}
+
+void EngineTests::ExportToCMakeTest5(Ishiko::Test& test)
+{
+    const char* output_name = "EngineTests_ExportToCMakeTest5.txt";
+    boost::filesystem::path input_path =
+        test.context().getOutputPath("minimal_static_library_with_include.nuime");
+    boost::filesystem::copy_file(test.context().getDataPath("minimal_static_library_with_include.nuime"),
+        input_path, boost::filesystem::copy_options::overwrite_existing);
+    boost::filesystem::path output_path = test.context().getOutputPath(output_name);
+
+    Engine engine;
+
+    Ishiko::Error error;
+    engine.load(input_path, error);
+    ISHIKO_TEST_ABORT_IF(error);
+
+    engine.exportToCMake(output_path, error);
+
+    ISHIKO_TEST_FAIL_IF(error);
+    ISHIKO_TEST_FAIL_IF_OUTPUT_AND_REFERENCE_FILES_NEQ(output_name);
+    ISHIKO_TEST_PASS();
+}
+
+void EngineTests::ExportToCMakeTest6(Ishiko::Test& test)
+{
+    const char* output_name = "EngineTests_ExportToCMakeTest6.txt";
+    boost::filesystem::path input_path =
+        test.context().getOutputPath("minimal_static_library_with_output_directory.nuime");
+    boost::filesystem::copy_file(test.context().getDataPath("minimal_static_library_with_output_directory.nuime"),
+        input_path, boost::filesystem::copy_options::overwrite_existing);
     boost::filesystem::path output_path = test.context().getOutputPath(output_name);
 
     Engine engine;

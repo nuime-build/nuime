@@ -4,6 +4,7 @@
 #include "Engine.hpp"
 #include <Nuime/BuildFiles/CMake/CMakeListsWriter.hpp>
 #include <Nuime/BuildFiles/Nuime/NuimeWellKnownLabels.hpp>
+#include <Nuime/BuildFiles/Nuime/NuimeWellKnownProperties.hpp>
 #include <boost/filesystem.hpp>
 
 using namespace Nuime;
@@ -47,6 +48,11 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
         // Each input group becomes its own CMake variable, named after the group's label. The
         // add_library/add_executable command then references those variables.
         std::vector<std::string> variable_references;
+
+        // User include directories declared on the source groups become PRIVATE include directories on
+        // the target: they are needed to compile this target's own sources, not by its consumers.
+        std::vector<std::string> private_include_directories;
+
         for (const NuimeInputGroup& input_group : recipe.inputGroups())
         {
             std::string variable_name;
@@ -79,21 +85,42 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
                 files.push_back(source.lexically_relative(output_dir).generic_string());
             }
 
+            writer.writeBlankLine();
             writer.writeSetCommand(variable_name, files);
             variable_references.push_back("${" + variable_name + "}");
+
+            // Include directories are paths relative to the build file's directory (like the inputs);
+            // re-express them relative to the generated CMakeLists.txt directory.
+            for (const NuimeProperty& property : input_group.properties().properties())
+            {
+                if (property.name() == WellKnownProperties::k_cpp_user_include_directories)
+                {
+                    boost::filesystem::path directory(property.value());
+                    if (directory.is_relative())
+                    {
+                        directory = build_file_dir / directory;
+                    }
+                    directory = directory.lexically_normal();
+                    private_include_directories.push_back(directory.lexically_relative(output_dir).generic_string());
+                }
+            }
         }
 
-        // The artifact name is the recipe's first output, falling back to the target name.
+        // The artifact name is the recipe's first output, falling back to the target name. The base of
+        // that same output group, if any, is the directory the built artifact should be placed in.
         std::string name = target.name();
+        std::string output_directory;
         for (const NuimeOutputGroup& output_group : recipe.outputGroups())
         {
             if (!output_group.outputs().empty())
             {
                 name = output_group.outputs()[0].asString();
+                output_directory = output_group.base();
                 break;
             }
         }
 
+        writer.writeBlankLine();
         if (is_executable)
         {
             writer.writeAddExecutableCommand(name, variable_references);
@@ -101,6 +128,29 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
         else
         {
             writer.writeAddLibraryCommand(name, variable_references);
+        }
+
+        // A static library's output directory maps to ARCHIVE_OUTPUT_DIRECTORY. CMake resolves a
+        // relative value of that property against the build tree, so anchor it to the source tree
+        // (CMAKE_CURRENT_SOURCE_DIR, i.e. the generated CMakeLists.txt directory) instead.
+        if (is_static_library && !output_directory.empty())
+        {
+            boost::filesystem::path directory(output_directory);
+            if (directory.is_relative())
+            {
+                directory = build_file_dir / directory;
+            }
+            directory = directory.lexically_normal();
+            std::string relative = directory.lexically_relative(output_dir).generic_string();
+            writer.writeBlankLine();
+            writer.writeSetTargetPropertiesCommand(name, "ARCHIVE_OUTPUT_DIRECTORY",
+                "${CMAKE_CURRENT_SOURCE_DIR}/" + relative);
+        }
+
+        if (!private_include_directories.empty())
+        {
+            writer.writeBlankLine();
+            writer.writeTargetIncludeDirectoriesCommand(name, "PRIVATE", private_include_directories);
         }
     }
 
