@@ -106,13 +106,16 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             }
         }
 
-        // The artifact name is the recipe's first output, falling back to the target name.
+        // The artifact name is the recipe's first output, falling back to the target name. The base of
+        // that same output group, if any, is the directory the built artifact should be placed in.
         std::string name = target.name();
+        std::string output_directory;
         for (const NuimeOutputGroup& output_group : recipe.outputGroups())
         {
             if (!output_group.outputs().empty())
             {
                 name = output_group.outputs()[0].asString();
+                output_directory = output_group.base();
                 break;
             }
         }
@@ -125,6 +128,23 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
         else
         {
             writer.writeAddLibraryCommand(name, variable_references);
+        }
+
+        // A static library's output directory maps to ARCHIVE_OUTPUT_DIRECTORY. CMake resolves a
+        // relative value of that property against the build tree, so anchor it to the source tree
+        // (CMAKE_CURRENT_SOURCE_DIR, i.e. the generated CMakeLists.txt directory) instead.
+        if (is_static_library && !output_directory.empty())
+        {
+            boost::filesystem::path directory(output_directory);
+            if (directory.is_relative())
+            {
+                directory = build_file_dir / directory;
+            }
+            directory = directory.lexically_normal();
+            std::string relative = directory.lexically_relative(output_dir).generic_string();
+            writer.writeBlankLine();
+            writer.writeSetTargetPropertiesCommand(name, "ARCHIVE_OUTPUT_DIRECTORY",
+                "${CMAKE_CURRENT_SOURCE_DIR}/" + relative);
         }
 
         if (!private_include_directories.empty())
