@@ -154,10 +154,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\Config.cpp" />
     <ClCompile Include="..\..\src\Engine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\Nuime.hpp" />
+    <ClInclude Include="..\..\..\include\Nuime\Config.hpp" />
     <ClInclude Include="..\..\..\include\Nuime\Engine.hpp" />
     <ClInclude Include="..\..\..\include\Nuime\linkoptions.hpp" />
   </ItemGroup>

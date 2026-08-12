@@ -104,9 +104,12 @@ NUIME_BUILDFILES_ROOT ?= $(NUIME_ROOT)/build-files
 
 all: ../bakefile/../../../lib/lib$(if $(call _equal,$(config),Debug),nuime-d,nuime).a
 
-../bakefile/../../../lib/lib$(if $(call _equal,$(config),Debug),nuime-d,nuime).a: $(_builddir)nuime_Engine.o
-	$(AR) rc $@ $(_builddir)nuime_Engine.o
+../bakefile/../../../lib/lib$(if $(call _equal,$(config),Debug),nuime-d,nuime).a: $(_builddir)nuime_Config.o $(_builddir)nuime_Engine.o
+	$(AR) rc $@ $(_builddir)nuime_Config.o $(_builddir)nuime_Engine.o
 	$(RANLIB) $@
+
+$(_builddir)nuime_Config.o: ../../src/Config.cpp
+	$(CXX) -c -o $@ $(CPPFLAGS) $(CXXFLAGS) -MD -MP -fPIC -DPIC -pthread -DYAML_CPP_STATIC_DEFINE -I$(ISHIKO_CPP_BASEPLATFORM_ROOT)/include -I$(ISHIKO_CPP_ERRORS_ROOT)/include -I$(ISHIKO_CPP_UUIDS_ROOT)/include -I$(ISHIKO_CPP_YAML_CPP_ROOT)/include -I$(ISHIKO_CPP_TIDYYAML_ROOT)/include -I$(ISHIKO_CPP_IO_ROOT)/include -I$(ISHIKO_CPP_BOOST_ROOT)/include -I$(ISHIKO_CPP_FILESYSTEM_ROOT)/include -I$(ISHIKO_CPP_FMT_ROOT)/include -I$(ISHIKO_CPP_MEMORY_ROOT)/include -I$(ISHIKO_CPP_TEXT_ROOT)/include -I$(NUIME_BUILDFILES_ROOT)/include -I../../../include/Nuime -std=c++14 ../../src/Config.cpp
 
 $(_builddir)nuime_Engine.o: ../../src/Engine.cpp
 	$(CXX) -c -o $@ $(CPPFLAGS) $(CXXFLAGS) -MD -MP -fPIC -DPIC -pthread -DYAML_CPP_STATIC_DEFINE -I$(ISHIKO_CPP_BASEPLATFORM_ROOT)/include -I$(ISHIKO_CPP_ERRORS_ROOT)/include -I$(ISHIKO_CPP_UUIDS_ROOT)/include -I$(ISHIKO_CPP_YAML_CPP_ROOT)/include -I$(ISHIKO_CPP_TIDYYAML_ROOT)/include -I$(ISHIKO_CPP_IO_ROOT)/include -I$(ISHIKO_CPP_BOOST_ROOT)/include -I$(ISHIKO_CPP_FILESYSTEM_ROOT)/include -I$(ISHIKO_CPP_FMT_ROOT)/include -I$(ISHIKO_CPP_MEMORY_ROOT)/include -I$(ISHIKO_CPP_TEXT_ROOT)/include -I$(NUIME_BUILDFILES_ROOT)/include -I../../../include/Nuime -std=c++14 ../../src/Engine.cpp

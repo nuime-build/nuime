@@ -4,6 +4,7 @@
 #ifndef GUARD_NUIME_HPP
 #define GUARD_NUIME_HPP
 
+#include "Nuime/Config.hpp"
 #include "Nuime/Engine.hpp"
 #include "Nuime/linkoptions.hpp"
 
