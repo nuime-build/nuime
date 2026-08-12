@@ -12,7 +12,7 @@ namespace
 {
 
 // Maps a nuime configuration axis value to the CMake configuration name it corresponds to.
-std::string toCMakeConfiguration(const std::string& configuration)
+std::string ToCMakeConfiguration(const std::string& configuration)
 {
     if (configuration == "debug")
     {
@@ -27,7 +27,7 @@ std::string toCMakeConfiguration(const std::string& configuration)
 
 // Maps a nuime architecture axis value to the Visual Studio platform name CMake exposes through
 // CMAKE_VS_PLATFORM_NAME (which reflects the -A option), e.g. x86 -> Win32.
-std::string toVSPlatformName(const std::string& architecture)
+std::string ToVSPlatformName(const std::string& architecture)
 {
     if (architecture == "x86")
     {
@@ -46,17 +46,75 @@ std::string toVSPlatformName(const std::string& architecture)
 
 // Compiles a configuration tag to the piece of an OUTPUT_NAME it contributes: a build-time choice in
 // multi-config generators, so one $<CONFIG:...> expression per non-empty value.
-std::string compileConfigurationTag(const NuimeStructuredFilename::Tag& tag)
+std::string CompileConfigurationTag(const NuimeStructuredFilename::Tag& tag)
 {
     std::string result;
     for (const auto& value : tag.values())
     {
         if (!value.second.empty())
         {
-            result += "$<$<CONFIG:" + toCMakeConfiguration(value.first) + ">:" + value.second + ">";
+            result += "$<$<CONFIG:" + ToCMakeConfiguration(value.first) + ">:" + value.second + ">";
         }
     }
     return result;
+}
+
+// Writes a set() command for each recognised source/header input group and records a reference to the
+// variable it defines, and gathers the user include directories declared on those groups. Paths are
+// resolved against each group's base (relative to the build file's directory) and then re-expressed
+// relative to the generated CMakeLists.txt directory.
+void WriteInputGroups(CMakeListsWriter& writer, const std::vector<NuimeInputGroup>& input_groups,
+    const boost::filesystem::path& build_file_dir, const boost::filesystem::path& output_dir,
+    std::vector<std::string>& variable_references, std::vector<std::string>& private_include_directories)
+{
+    for (const NuimeInputGroup& input_group : input_groups)
+    {
+        std::string variable_name;
+        if (input_group.hasLabel(WellKnownStrings::k_cpp_source))
+        {
+            variable_name = "SOURCE_FILES";
+        }
+        else if (input_group.hasLabel(WellKnownStrings::k_cpp_header))
+        {
+            variable_name = "HEADER_FILES";
+        }
+        else
+        {
+            // Only recognised input kinds map to a variable for now.
+            continue;
+        }
+
+        boost::filesystem::path base(input_group.base());
+        std::vector<std::string> files;
+        for (const NuimeInput& input : input_group.inputs())
+        {
+            boost::filesystem::path source = base / input.asString();
+            if (source.is_relative())
+            {
+                source = build_file_dir / source;
+            }
+            source = source.lexically_normal();
+            files.push_back(source.lexically_relative(output_dir).generic_string());
+        }
+
+        writer.writeBlankLine();
+        writer.writeSetCommand(variable_name, files);
+        variable_references.push_back("${" + variable_name + "}");
+
+        for (const NuimeProperty& property : input_group.properties().properties())
+        {
+            if (property.name() == WellKnownStrings::k_cpp_user_include_directories)
+            {
+                boost::filesystem::path directory(property.value());
+                if (directory.is_relative())
+                {
+                    directory = build_file_dir / directory;
+                }
+                directory = directory.lexically_normal();
+                private_include_directories.push_back(directory.lexically_relative(output_dir).generic_string());
+            }
+        }
+    }
 }
 
 }
@@ -97,66 +155,13 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             continue;
         }
 
-        // Each input group becomes its own CMake variable, named after the group's label. The
-        // add_library/add_executable command then references those variables.
+        // Each recognised input group becomes a CMake variable (referenced by add_library/add_executable),
+        // and the user include directories declared on those groups become the target's PRIVATE include
+        // directories.
         std::vector<std::string> variable_references;
-
-        // User include directories declared on the source groups become PRIVATE include directories on
-        // the target: they are needed to compile this target's own sources, not by its consumers.
         std::vector<std::string> private_include_directories;
-
-        for (const NuimeInputGroup& input_group : recipe.inputGroups())
-        {
-            std::string variable_name;
-            if (input_group.hasLabel(WellKnownStrings::k_cpp_source))
-            {
-                variable_name = "SOURCE_FILES";
-            }
-            else if (input_group.hasLabel(WellKnownStrings::k_cpp_header))
-            {
-                variable_name = "HEADER_FILES";
-            }
-            else
-            {
-                // Only recognised input kinds map to a variable for now.
-                continue;
-            }
-
-            // Each file is resolved against its group's base (relative to the build file's directory)
-            // and then re-expressed relative to the generated CMakeLists.txt directory.
-            boost::filesystem::path base(input_group.base());
-            std::vector<std::string> files;
-            for (const NuimeInput& input : input_group.inputs())
-            {
-                boost::filesystem::path source = base / input.asString();
-                if (source.is_relative())
-                {
-                    source = build_file_dir / source;
-                }
-                source = source.lexically_normal();
-                files.push_back(source.lexically_relative(output_dir).generic_string());
-            }
-
-            writer.writeBlankLine();
-            writer.writeSetCommand(variable_name, files);
-            variable_references.push_back("${" + variable_name + "}");
-
-            // Include directories are paths relative to the build file's directory (like the inputs);
-            // re-express them relative to the generated CMakeLists.txt directory.
-            for (const NuimeProperty& property : input_group.properties().properties())
-            {
-                if (property.name() == WellKnownStrings::k_cpp_user_include_directories)
-                {
-                    boost::filesystem::path directory(property.value());
-                    if (directory.is_relative())
-                    {
-                        directory = build_file_dir / directory;
-                    }
-                    directory = directory.lexically_normal();
-                    private_include_directories.push_back(directory.lexically_relative(output_dir).generic_string());
-                }
-            }
-        }
+        WriteInputGroups(writer, recipe.inputGroups(), build_file_dir, output_dir, variable_references,
+            private_include_directories);
 
         // The artifact name is the recipe's first output, falling back to the target name. The base of
         // that same output group, if any, is the directory the built artifact should be placed in.
@@ -221,14 +226,14 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             {
                 if (tag.axis() == WellKnownStrings::k_configuration)
                 {
-                    output_name += compileConfigurationTag(tag);
+                    output_name += CompileConfigurationTag(tag);
                 }
                 else if (tag.axis() == WellKnownStrings::k_architecture)
                 {
                     std::vector<std::pair<std::string, std::string>> cases;
                     for (const auto& value : tag.values())
                     {
-                        cases.push_back(std::make_pair(toVSPlatformName(value.first), value.second));
+                        cases.push_back(std::make_pair(ToVSPlatformName(value.first), value.second));
                     }
                     writer.writeBlankLine();
                     writer.writeStringSwitchCommand("NUIME_ARCH_TAG", "CMAKE_VS_PLATFORM_NAME", cases);
