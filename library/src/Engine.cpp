@@ -3,11 +3,49 @@
 
 #include "Engine.hpp"
 #include <Nuime/BuildFiles/CMake/CMakeListsWriter.hpp>
-#include <Nuime/BuildFiles/Nuime/NuimeWellKnownLabels.hpp>
-#include <Nuime/BuildFiles/Nuime/NuimeWellKnownProperties.hpp>
+#include <Nuime/BuildFiles/Nuime/NuimeWellKnownStrings.hpp>
 #include <boost/filesystem.hpp>
 
 using namespace Nuime;
+
+namespace
+{
+
+// Maps a nuime configuration axis value to the CMake configuration name it corresponds to.
+std::string toCMakeConfiguration(const std::string& configuration)
+{
+    if (configuration == "debug")
+    {
+        return "Debug";
+    }
+    if (configuration == "release")
+    {
+        return "Release";
+    }
+    return configuration;
+}
+
+// Compiles a filename tag to the piece of an OUTPUT_NAME it contributes, using the build-time construct
+// its axis resolves through. Only the configuration axis is handled for now.
+std::string compileFilenameTag(const NuimeStructuredFilename::Tag& tag)
+{
+    if (tag.axis() == WellKnownStrings::k_configuration)
+    {
+        // A build-time choice in multi-config generators: one $<CONFIG:...> expression per non-empty value.
+        std::string result;
+        for (const auto& value : tag.values())
+        {
+            if (!value.second.empty())
+            {
+                result += "$<$<CONFIG:" + toCMakeConfiguration(value.first) + ">:" + value.second + ">";
+            }
+        }
+        return result;
+    }
+    return "";
+}
+
+}
 
 void Engine::load(const boost::filesystem::path& path, Ishiko::Error& error)
 {
@@ -38,8 +76,8 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
 
         // Check for the executable label first, then static library. For now we only handle these two
         // and silently ignore everything else.
-        bool is_executable = target.hasLabel(WellKnownLabels::k_executable);
-        bool is_static_library = target.hasLabel(WellKnownLabels::k_static_library);
+        bool is_executable = target.hasLabel(WellKnownStrings::k_executable);
+        bool is_static_library = target.hasLabel(WellKnownStrings::k_static_library);
         if (!is_executable && !is_static_library)
         {
             continue;
@@ -56,11 +94,11 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
         for (const NuimeInputGroup& input_group : recipe.inputGroups())
         {
             std::string variable_name;
-            if (input_group.hasLabel(WellKnownLabels::k_cpp_source))
+            if (input_group.hasLabel(WellKnownStrings::k_cpp_source))
             {
                 variable_name = "SOURCE_FILES";
             }
-            else if (input_group.hasLabel(WellKnownLabels::k_cpp_header))
+            else if (input_group.hasLabel(WellKnownStrings::k_cpp_header))
             {
                 variable_name = "HEADER_FILES";
             }
@@ -93,7 +131,7 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             // re-express them relative to the generated CMakeLists.txt directory.
             for (const NuimeProperty& property : input_group.properties().properties())
             {
-                if (property.name() == WellKnownProperties::k_cpp_user_include_directories)
+                if (property.name() == WellKnownStrings::k_cpp_user_include_directories)
                 {
                     boost::filesystem::path directory(property.value());
                     if (directory.is_relative())
@@ -110,12 +148,15 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
         // that same output group, if any, is the directory the built artifact should be placed in.
         std::string name = target.name();
         std::string output_directory;
+        const NuimeOutput* artifact = nullptr;
         for (const NuimeOutputGroup& output_group : recipe.outputGroups())
         {
             if (!output_group.outputs().empty())
             {
-                name = output_group.outputs()[0].asString();
+                const NuimeOutput& output = output_group.outputs()[0];
+                name = output.asString();
                 output_directory = output_group.base();
+                artifact = &output;
                 break;
             }
         }
@@ -145,6 +186,26 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             writer.writeBlankLine();
             writer.writeSetTargetPropertiesCommand(name, "ARCHIVE_OUTPUT_DIRECTORY",
                 "${CMAKE_CURRENT_SOURCE_DIR}/" + relative);
+        }
+
+        // An explicit filename layout maps to CMake's PREFIX and OUTPUT_NAME. Each tag is compiled to
+        // the construct its axis resolves through (e.g. configuration -> a $<CONFIG:...> expression).
+        if (artifact && artifact->hasFilename())
+        {
+            const NuimeStructuredFilename& filename = artifact->filename();
+            if (!filename.prefix().empty())
+            {
+                writer.writeBlankLine();
+                writer.writeSetTargetPropertiesCommand(name, "PREFIX", filename.prefix());
+            }
+
+            std::string output_name = name;
+            for (const NuimeStructuredFilename::Tag& tag : filename.tags())
+            {
+                output_name += compileFilenameTag(tag);
+            }
+            writer.writeBlankLine();
+            writer.writeSetTargetPropertiesCommand(name, "OUTPUT_NAME", output_name);
         }
 
         if (!private_include_directories.empty())

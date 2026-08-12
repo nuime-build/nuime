@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.16)
+project(example LANGUAGES CXX)
+
+set(SOURCE_FILES
+    src/my_library.cpp
+)
+
+add_library(example STATIC
+    ${SOURCE_FILES}
+)
+
+set_target_properties(example PROPERTIES
+    PREFIX lib
+)
+
+set_target_properties(example PROPERTIES
+    OUTPUT_NAME example$<$<CONFIG:Debug>:-d>
+)
