@@ -192,7 +192,9 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
 
         // A static library's output directory maps to ARCHIVE_OUTPUT_DIRECTORY. CMake resolves a
         // relative value of that property against the build tree, so anchor it to the source tree
-        // (CMAKE_CURRENT_SOURCE_DIR, i.e. the generated CMakeLists.txt directory) instead.
+        // (CMAKE_CURRENT_SOURCE_DIR, i.e. the generated CMakeLists.txt directory). Wrapping the value in
+        // a generator expression also stops multi-config generators (Visual Studio) from appending a
+        // per-configuration subdirectory - the configuration is already carried by the artifact name.
         if (is_static_library && !output_directory.empty())
         {
             boost::filesystem::path directory(output_directory);
@@ -204,7 +206,7 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
             std::string relative = directory.lexically_relative(output_dir).generic_string();
             writer.writeBlankLine();
             writer.writeSetTargetPropertiesCommand(name, "ARCHIVE_OUTPUT_DIRECTORY",
-                "${CMAKE_CURRENT_SOURCE_DIR}/" + relative);
+                "$<1:${CMAKE_CURRENT_SOURCE_DIR}/" + relative + ">");
         }
 
         // An explicit filename layout maps to CMake's PREFIX and OUTPUT_NAME. Each tag is compiled to
