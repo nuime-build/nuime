@@ -25,24 +25,38 @@ std::string toCMakeConfiguration(const std::string& configuration)
     return configuration;
 }
 
-// Compiles a filename tag to the piece of an OUTPUT_NAME it contributes, using the build-time construct
-// its axis resolves through. Only the configuration axis is handled for now.
-std::string compileFilenameTag(const NuimeStructuredFilename::Tag& tag)
+// Maps a nuime architecture axis value to the Visual Studio platform name CMake exposes through
+// CMAKE_VS_PLATFORM_NAME (which reflects the -A option), e.g. x86 -> Win32.
+std::string toVSPlatformName(const std::string& architecture)
 {
-    if (tag.axis() == WellKnownStrings::k_configuration)
+    if (architecture == "x86")
     {
-        // A build-time choice in multi-config generators: one $<CONFIG:...> expression per non-empty value.
-        std::string result;
-        for (const auto& value : tag.values())
-        {
-            if (!value.second.empty())
-            {
-                result += "$<$<CONFIG:" + toCMakeConfiguration(value.first) + ">:" + value.second + ">";
-            }
-        }
-        return result;
+        return "Win32";
     }
-    return "";
+    if (architecture == "x64")
+    {
+        return "x64";
+    }
+    if (architecture == "arm64")
+    {
+        return "ARM64";
+    }
+    return architecture;
+}
+
+// Compiles a configuration tag to the piece of an OUTPUT_NAME it contributes: a build-time choice in
+// multi-config generators, so one $<CONFIG:...> expression per non-empty value.
+std::string compileConfigurationTag(const NuimeStructuredFilename::Tag& tag)
+{
+    std::string result;
+    for (const auto& value : tag.values())
+    {
+        if (!value.second.empty())
+        {
+            result += "$<$<CONFIG:" + toCMakeConfiguration(value.first) + ">:" + value.second + ">";
+        }
+    }
+    return result;
 }
 
 }
@@ -199,10 +213,27 @@ void Engine::exportToCMake(const boost::filesystem::path& output_path, Ishiko::E
                 writer.writeSetTargetPropertiesCommand(name, "PREFIX", filename.prefix());
             }
 
+            // OUTPUT_NAME is the stem plus each tag's contribution. The configuration axis compiles to a
+            // generator expression; the architecture axis is resolved at configure time, so it is emitted
+            // as a variable (set from CMAKE_VS_PLATFORM_NAME) that OUTPUT_NAME then references.
             std::string output_name = name;
             for (const NuimeStructuredFilename::Tag& tag : filename.tags())
             {
-                output_name += compileFilenameTag(tag);
+                if (tag.axis() == WellKnownStrings::k_configuration)
+                {
+                    output_name += compileConfigurationTag(tag);
+                }
+                else if (tag.axis() == WellKnownStrings::k_architecture)
+                {
+                    std::vector<std::pair<std::string, std::string>> cases;
+                    for (const auto& value : tag.values())
+                    {
+                        cases.push_back(std::make_pair(toVSPlatformName(value.first), value.second));
+                    }
+                    writer.writeBlankLine();
+                    writer.writeStringSwitchCommand("NUIME_ARCH_TAG", "CMAKE_VS_PLATFORM_NAME", cases);
+                    output_name += "${NUIME_ARCH_TAG}";
+                }
             }
             writer.writeBlankLine();
             writer.writeSetTargetPropertiesCommand(name, "OUTPUT_NAME", output_name);
