@@ -33,12 +33,14 @@ library nuime : NuimeBuildFiles
     headers
     {
         ../../../include/Nuime.hpp
+        ../../../include/Nuime/Config.hpp
         ../../../include/Nuime/Engine.hpp
         ../../../include/Nuime/linkoptions.hpp
     }
 
     sources
     {
+        ../../src/Config.cpp
         ../../src/Engine.cpp
     }
 }
